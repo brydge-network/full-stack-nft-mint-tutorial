@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+from brownie import BrydgeCollection
 
 metadata_template = {
     "name": "",
@@ -8,9 +9,12 @@ metadata_template = {
     "image": ""
 }
 
-
-# def main():
-#     write_metadata(3)
+def main():
+    # gets our most recent NFT deployment
+    brydge_collection = BrydgeCollection[-1]
+    existing_tokens = brydge_collection.tokenCounter()
+    #however many nfts we want to deploy
+    meta_data_hashes = write_metadata(3)
 
 def write_metadata(num_tokens):
     # We'll use this array to store the hashes of the metadata
@@ -47,7 +51,6 @@ def write_metadata(num_tokens):
         # Finally, we'll write the array of metadata URIs to a file
         json.dump(meta_data_hashes, f)
     return meta_data_hashes
-
 
 def upload_to_ipfs(data):
     # Get our Pinata credentials from our .env file
