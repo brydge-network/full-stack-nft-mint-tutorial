@@ -1,8 +1,8 @@
-from brownie import WaterCollection, accounts, config
+from brownie import BrydgeCollection, accounts, config
 
 
 def main():
     dev = accounts.add(config['wallets']['from_key'])
-    WaterCollection.deploy(
+    BrydgeCollection.deploy(
         {'from': dev}
     )

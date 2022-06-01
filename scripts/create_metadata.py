@@ -9,9 +9,8 @@ metadata_template = {
 }
 
 
-def main():
-    write_metadata(3)
-
+# def main():
+#     write_metadata(3)
 
 def write_metadata(num_tokens):
     # We'll use this array to store the hashes of the metadata
@@ -22,8 +21,8 @@ def write_metadata(num_tokens):
         meta_data_filename = f"metadata/{token_id + 1}.json"
         # Name of the collectible set to its token id
         collectible_metadata["name"] = str(token_id)
-        # Description of the collectible set to be "Wata"
-        collectible_metadata["description"] = "Wata"
+        # Description of the NFT
+        collectible_metadata["description"] = f"Brydge NFT #{token_id}"
         # Path of the artwork to be uploaded to IPFS
         img_path = f"images/{token_id + 1}.jpg"
         with open(img_path, "rb") as f:
@@ -42,7 +41,6 @@ def write_metadata(num_tokens):
         meta_data_hash = upload_to_ipfs(collectible_metadata['image'])
         print('metadata hash', meta_data_hash)
         meta_data_path = f"https://ipfs.io/ipfs/{meta_data_hash}"
-        print('hello')
         # Add the metadata URI to the array
         meta_data_hashes.append(meta_data_path)
     with open('metadata/data.json', 'w') as f:
