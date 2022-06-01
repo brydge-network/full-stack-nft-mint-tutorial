@@ -1,17 +1,32 @@
-import Head from 'next/head'
-
 import { useState } from 'react'
 import { nftContractAddress } from '../config.js'
 import { ethers } from 'ethers'
-import axios from 'axios'
+import { useEthers } from '@usedapp/core'
+import { SwapWidget } from '@brydge-network/widget'
+
 
 import NFT from '../../build/contracts/BrydgeCollection.json'
 import uriList from '../../metadata/data.json'
 
-const mint = () => {
+const MintPage = () => {
 	const [mintedNFT, setMintedNFT] = useState(null)
 	const [miningStatus, setMiningStatus] = useState(null)
 	const [currentAccount, setCurrentAccount] = useState('')
+	const { library } = useEthers()
+	const idOfNFTToBuy = 3
+
+	function encodedCalls(nftId){
+		const mintableContract = NFT.abi
+		const mintableContractInterface = new ethers.utils.Interface(mintableContract);
+		const mintPrice = ethers.utils.parseEther("0.001")
+		const nftUri = uriList[nftId]
+		const mintableContractCalldata = mintableContractInterface.encodeFunctionData('mintBrydgeNFT', [nftUri]);
+		const calls = [
+			{ _to: nftContractAddress, _value: mintPrice, _calldata: mintableContractCalldata },
+		  ];
+		return calls
+	}
+
 
 	// Calls Metamask to connect wallet on clicking Connect Wallet button
 	const connectWallet = async () => {
@@ -26,12 +41,14 @@ const mint = () => {
 			console.log('Connected to chain:' + chainId)
 
 			const rinkebyChainId = '0x4'
+			const polygonChainId = '0x89'
+			const ethereumChainId = '0x1'
 
 			const devChainId = 1337
 			const localhostChainId = `0x${Number(devChainId).toString(16)}`
 
-			if (chainId !== rinkebyChainId && chainId !== localhostChainId) {
-				alert('You are not connected to the Rinkeby Testnet!')
+			if (chainId !== rinkebyChainId && chainId !== localhostChainId && chainId !== polygonChainId && chainId !== ethereumChainId) {
+				alert('You are not connected to the Rinkeby Testnet or Polygon Mainnet!')
 				return
 			}
 
@@ -43,80 +60,7 @@ const mint = () => {
 			console.log('Error connecting to metamask', error)
 		}
 	}
-
-	// Creates transaction to mint NFT on clicking Mint Character button
-	const mintCharacter = async () => {
-		try {
-			const { ethereum } = window
-
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum)
-				const signer = provider.getSigner()
-				const nftContract = new ethers.Contract(
-					nftContractAddress,
-					NFT.abi,
-					signer
-				)
-				// let nftTx = await nftContract.createEternalNFT()
-				let nftId = await nftContract.tokenCounter()
-				nftId = await nftId.toNumber()
-				console.log('about to mint Brydge NFT #', nftId)
-				const nftUri = uriList[nftId]
-				// const nftUri = uriList[0]
-				console.log(nftUri)
-				let nftTx = await nftContract.mintBrydgeNFT(nftUri, { value: ethers.utils.parseEther("0.001") })
-				console.log('Mining....', nftTx.hash)
-				setMiningStatus(0)
-
-				let tx = await nftTx.wait()
-				console.log('Mined!', tx)
-
-				console.log(
-					`Mined, see transaction: https://rinkeby.etherscan.io/tx/${nftTx.hash}`
-				)
-
-				getMintedNFT(nftId)
-			} else {
-				console.log("Ethereum object doesn't exist!")
-			}
-		} catch (error) {
-			console.log('Error minting character', error)
-		}
-	}
-
-	// Gets the minted NFT data
-	const getMintedNFT = async (nftId) => {
-		try {
-			const { ethereum } = window
-
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum)
-				const signer = provider.getSigner()
-				const nftContract = new ethers.Contract(
-					nftContractAddress,
-					NFT.abi,
-					signer
-				)
-				// let nftId = await nftContract.tokenCounter()
-				// nftId = await nftId.toNumber()
-			
-				// console.log(nftId)
-				let tokenUri = await nftContract.tokenURI(nftId)
-				let data = await axios.get(tokenUri)
-				let image = data.data
-
-				setMiningStatus(1)
-				// setMintedNFT(meta.image)
-				setMintedNFT(image)
-				// console.log(mintedNFT)
-			} else {
-				console.log("Ethereum object doesn't exist!")
-			}
-		} catch (error) {
-			console.log(error)
-		}
-	}
-
+	
 	return (
 		<div className='flex flex-col items-center pt-32 bg-[#0B132B] text-[#d3d3d3] min-h-screen'>
 			<div className='trasition hover:rotate-180 hover:scale-105 transition duration-500 ease-in-out'>
@@ -141,19 +85,23 @@ const mint = () => {
 					Connect Wallet
 				</button>
 			) : (
-				<button
-					className='text-2xl font-bold py-3 px-12 bg-black shadow-lg shadow-[#6FFFE9] rounded-lg mb-10 hover:scale-105 transition duration-500 ease-in-out'
-					onClick={mintCharacter}
-				>
-					Mint Brydge NFT for 0.001 ETH
-				</button>
+				<SwapWidget
+                jsonRpcEndpoints={{
+                  1: 'https://mainnet.infura.io/v3/d3c71913403e47b4ac4813c7adb96043',
+                  137: 'https://polygon-mainnet.infura.io/v3/d3c71913403e47b4ac4813c7adb96043',
+                }}
+								calls={encodedCalls(idOfNFTToBuy)}
+                provider={library}
+                defaultOutputTokenAddress='NATIVE'
+                defaultOutputAmount={0.001}
+                title='Mint Brydge Tutorial NFT'
+                destinationChainId={137}
+              />
 			)}
 			{miningStatus === 1 ? (
-				<img
-				src={mintedNFT}
-				alt=''
-				className='h-60 w-60 rounded-lg shadow-2xl shadow-[#6FFFE9] hover:scale-105 transition duration-500 ease-in-out'
-			/>
+				<h2 className='text-3xl font-bold mb-20 mt-12'>
+					NFT Minted Successfully!
+				</h2>
 			) : (
 				<div></div>
 			)}
@@ -161,4 +109,4 @@ const mint = () => {
 	)
 }
 
-export default mint
+export default MintPage
