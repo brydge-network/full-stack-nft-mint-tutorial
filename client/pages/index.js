@@ -90,7 +90,7 @@ const MintPage = () => {
                   1: 'https://mainnet.infura.io/v3/d3c71913403e47b4ac4813c7adb96043',
                   137: 'https://polygon-mainnet.infura.io/v3/d3c71913403e47b4ac4813c7adb96043',
                 }}
-								calls={encodedCalls(idOfNFTToBuy)}
+				calls={encodedCalls(idOfNFTToBuy)}
                 provider={library}
                 defaultOutputTokenAddress='NATIVE'
                 defaultOutputAmount={0.001}
